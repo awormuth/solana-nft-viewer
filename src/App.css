@@ -129,3 +129,8 @@
 .connected-container button {
   height: 50px;
 }
+
+.play-canvas-style {
+  width: 50em;
+  height: 25em;
+}
