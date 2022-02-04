@@ -75,7 +75,8 @@ const App = () => {
 
       fetch(
         "https://api-mainnet.magiceden.io/rpc/getNFTByMintAddress/" +
-          tokenPublicKey
+          tokenPublicKey,
+        { mode: "no-cors" }
       )
         .then((res) => res.json())
         .then(
