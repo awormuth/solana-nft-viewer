@@ -56,6 +56,12 @@ const App = () => {
     }
   };
 
+  const loadImageData = async (uri) => {
+    const response = await fetch(uri);
+    const { image } = await response.json();
+    return image;
+  };
+
   async function getNFTs() {
     const connection = new Connection(network, "processed");
     const pubKey = new PublicKey(walletAddress);
@@ -71,11 +77,25 @@ const App = () => {
       var val = tokenOwner.value[i];
       var tokenPublicKey = val.account.data.parsed.info.mint;
 
-      console.log(val.account);
+      // try {
+      //   var metadata = await getMetadata(tokenPublicKey);
+      //   var imageURL = await loadImageData(metadata.data.data.uri);
+      //   // console.log(metadata.data);
+      //   // eslint-disable-next-line no-loop-func
+      //   setNftList((nftList) => [
+      //     ...nftList,
+      //     {
+      //       img: imageURL,
+      //     },
+      //   ]);
+      // } catch {
+      //   continue;
+      // }
 
       fetch(
         "https://api-mainnet.magiceden.io/rpc/getNFTByMintAddress/" +
-          tokenPublicKey
+          tokenPublicKey,
+        { mode: "cors" }
       )
         .then((res) => res.json())
         .then(
