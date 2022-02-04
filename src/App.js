@@ -1,9 +1,9 @@
 import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import { clusterApiUrl, Connection, PublicKey } from "@solana/web3.js";
+import * as pc from "playcanvas";
 import React, { useEffect, useState } from "react";
 import "./App.css";
 import { getMetadata } from "./token_metadata";
-import * as pc from 'playcanvas';
 
 // Set our network to devnet.
 const network = clusterApiUrl("mainnet-beta");
@@ -76,12 +76,18 @@ const App = () => {
     console.log("Lamports: ", balance);
 
     for (var i = 0; i < tokenOwner.value.length; i++) {
+      // Only pull 1 NFT right now for testing.
+      if (i > 0) {
+        break;
+      }
+
       var val = tokenOwner.value[i];
       var tokenPublicKey = val.account.data.parsed.info.mint;
 
       try {
         var metadata = await getMetadata(tokenPublicKey);
         var imageURL = await loadImageData(metadata.data.data.uri);
+        console.log(imageURL);
         // console.log(metadata.data);
         // eslint-disable-next-line no-loop-func
         setNftList((nftList) => [
@@ -167,18 +173,25 @@ const App = () => {
     if (walletAddress) {
       console.log("Fetching NFTs...");
       getNFTs();
+    }
+  }, [walletAddress]);
+
+  useEffect(() => {
+    if (nftList.length > 0) {
+      console.log("Loaded NFTs:");
+      console.log(nftList);
 
       //const app = new pc.Application(document.getElementById('game'));
       //app.setCanvasResolution(pc.RESOLUTION_AUTO);
 
       //const app = new pc.Application(canvas, {});
-      const app = new pc.Application(document.getElementById('game'));
+      const app = new pc.Application(document.getElementById("game"));
       app.setCanvasResolution(pc.RESOLUTION_AUTO);
 
       // create box entity
       const box = new pc.Entity("cube");
       box.addComponent("render", {
-          type: "box",
+        type: "box",
       });
 
       app.root.addChild(box);
@@ -186,7 +199,7 @@ const App = () => {
       // create camera entity
       const camera = new pc.Entity("camera");
       camera.addComponent("camera", {
-          clearColor: new pc.Color(0.5, 0.6, 0.9),
+        clearColor: new pc.Color(0.5, 0.6, 0.9),
       });
 
       app.root.addChild(camera);
@@ -202,9 +215,8 @@ const App = () => {
       app.on("update", (dt) => box.rotate(10 * dt, 20 * dt, 30 * dt));
 
       app.start();
-
     }
-  }, [walletAddress]);
+  }, [nftList]);
 
   return (
     <div className="App">
