@@ -2,6 +2,7 @@ import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import { clusterApiUrl, Connection, PublicKey } from "@solana/web3.js";
 import React, { useEffect, useState } from "react";
 import "./App.css";
+import { getMetadata } from "./token_metadata";
 
 // Set our network to devnet.
 const network = clusterApiUrl("mainnet-beta");
@@ -77,43 +78,43 @@ const App = () => {
       var val = tokenOwner.value[i];
       var tokenPublicKey = val.account.data.parsed.info.mint;
 
-      // try {
-      //   var metadata = await getMetadata(tokenPublicKey);
-      //   var imageURL = await loadImageData(metadata.data.data.uri);
-      //   // console.log(metadata.data);
-      //   // eslint-disable-next-line no-loop-func
-      //   setNftList((nftList) => [
-      //     ...nftList,
-      //     {
-      //       img: imageURL,
-      //     },
-      //   ]);
-      // } catch {
-      //   continue;
-      // }
-
-      fetch(
-        "https://api-mainnet.magiceden.io/rpc/getNFTByMintAddress/" +
-          tokenPublicKey,
-        { mode: "cors" }
-      )
-        .then((res) => res.json())
-        .then(
-          (result) => {
-            if (result.results != null) {
-              setNftList((nftList) => [
-                ...nftList,
-                {
-                  img: result.results.img,
-                  attributes: JSON.stringify(result.results.attributes),
-                },
-              ]);
-            }
+      try {
+        var metadata = await getMetadata(tokenPublicKey);
+        var imageURL = await loadImageData(metadata.data.data.uri);
+        // console.log(metadata.data);
+        // eslint-disable-next-line no-loop-func
+        setNftList((nftList) => [
+          ...nftList,
+          {
+            img: imageURL,
           },
-          (error) => {
-            console.log(error);
-          }
-        );
+        ]);
+      } catch {
+        continue;
+      }
+
+      // fetch(
+      //   "https://api-mainnet.magiceden.io/rpc/getNFTByMintAddress/" +
+      //     tokenPublicKey,
+      //   { mode: "cors" }
+      // )
+      //   .then((res) => res.json())
+      //   .then(
+      //     (result) => {
+      //       if (result.results != null) {
+      //         setNftList((nftList) => [
+      //           ...nftList,
+      //           {
+      //             img: result.results.img,
+      //             attributes: JSON.stringify(result.results.attributes),
+      //           },
+      //         ]);
+      //       }
+      //     },
+      //     (error) => {
+      //       console.log(error);
+      //     }
+      //   );
     }
   }
 
