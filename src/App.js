@@ -1,6 +1,5 @@
 import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import { clusterApiUrl, Connection, PublicKey } from "@solana/web3.js";
-import * as pc from "playcanvas";
 import React, { useEffect, useState } from "react";
 import "./App.css";
 import { getMetadata } from "./token_metadata";
@@ -76,8 +75,7 @@ const App = () => {
     console.log("Lamports: ", balance);
 
     for (var i = 0; i < tokenOwner.value.length; i++) {
-      // Only pull 1 NFT right now for testing.
-      if (i > 0) {
+      if (i >= 7) {
         break;
       }
 
@@ -88,7 +86,7 @@ const App = () => {
         var metadata = await getMetadata(tokenPublicKey);
         var imageURL = await loadImageData(metadata.data.data.uri);
         console.log(imageURL);
-        // console.log(metadata.data);
+        console.log(metadata.data);
         // eslint-disable-next-line no-loop-func
         setNftList((nftList) => [
           ...nftList,
@@ -134,7 +132,7 @@ const App = () => {
       className="cta-button connect-wallet-button"
       onClick={connectWallet}
     >
-      Connect to Wallet
+      Connect Wallet
     </button>
   );
 
@@ -188,14 +186,14 @@ const App = () => {
       {/* This was solely added for some styling fanciness */}
       <div className={walletAddress ? "authed-container" : "container"}>
         <div className="header-container">
-          <p className="header">🖼 Best NFTs ever</p>
-          <p className="sub-text">
-            View your NFT collection in the metaverse ✨
-          </p>
-          {/* Add the condition to show this only if we don't have a wallet address */}
           {!walletAddress && renderNotConnectedContainer()}
+          <iframe
+            src="http://localhost:8080/"
+            id="game"
+            title="PlayCanvas"
+            frameBorder="0"
+          ></iframe>
           {walletAddress && renderConnectedContainer()}
-          <iframe src="http://localhost:8080/" title="PlayCanvas"></iframe>
         </div>
         <div className="footer-container"></div>
       </div>
