@@ -163,6 +163,13 @@ const App = () => {
     const onLoad = async () => {
       await checkIfWalletIsConnected();
     };
+
+    window.addEventListener("message", function(event) {
+        
+      console.log('EVENT: ', event);
+
+    }.bind(this));
+
     window.addEventListener("load", onLoad);
     return () => window.removeEventListener("load", onLoad);
   }, []);
@@ -188,7 +195,7 @@ const App = () => {
         <div className="header-container">
           {!walletAddress && renderNotConnectedContainer()}
           <iframe
-            src="http://localhost:8080/"
+            src="https://playcanv.as/e/p/zqG68neQ/"
             id="game"
             title="PlayCanvas"
             frameBorder="0"
