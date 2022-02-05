@@ -11,6 +11,7 @@ const App = () => {
   // State
   const [walletAddress, setWalletAddress] = useState(null);
   const [nftList, setNftList] = useState([]);
+  const [playcanvasReady, setPlaycanvasReady] = useState(false);
 
   /*
    * This function holds the logic for deciding if a Phantom Wallet is
@@ -67,15 +68,13 @@ const App = () => {
     const connection = new Connection(network, "processed");
     const pubKey = new PublicKey(walletAddress);
     var balance = await connection.getBalance(pubKey);
-    // var accountInfo = await connection.getAccountInfo(pubKey);
-    // var tokenBalance = await connection.getTokenAccountBalance(pubKey);
     var tokenOwner = await connection.getParsedTokenAccountsByOwner(pubKey, {
       programId: TOKEN_PROGRAM_ID,
     });
     console.log("Lamports: ", balance);
 
     for (var i = 0; i < tokenOwner.value.length; i++) {
-      if (i >= 7) {
+      if (i > 0) {
         break;
       }
 
@@ -97,29 +96,6 @@ const App = () => {
       } catch {
         continue;
       }
-
-      // fetch(
-      //   "https://api-mainnet.magiceden.io/rpc/getNFTByMintAddress/" +
-      //     tokenPublicKey,
-      //   { mode: "cors" }
-      // )
-      //   .then((res) => res.json())
-      //   .then(
-      //     (result) => {
-      //       if (result.results != null) {
-      //         setNftList((nftList) => [
-      //           ...nftList,
-      //           {
-      //             img: result.results.img,
-      //             attributes: JSON.stringify(result.results.attributes),
-      //           },
-      //         ]);
-      //       }
-      //     },
-      //     (error) => {
-      //       console.log(error);
-      //     }
-      //   );
     }
   }
 
@@ -164,11 +140,13 @@ const App = () => {
       await checkIfWalletIsConnected();
     };
 
-    window.addEventListener("message", function(event) {
-        
-      console.log('EVENT: ', event);
-
-    }.bind(this));
+    window.addEventListener("message", function (event) {
+      if (event.origin === "https://playcanv.as") {
+        if (event.data.type === "IFrameReady") {
+          setPlaycanvasReady(true);
+        }
+      }
+    });
 
     window.addEventListener("load", onLoad);
     return () => window.removeEventListener("load", onLoad);
@@ -182,11 +160,37 @@ const App = () => {
   }, [walletAddress]);
 
   useEffect(() => {
-    if (nftList.length > 0) {
+    if (nftList.length > 0 && playcanvasReady) {
       console.log("Loaded NFTs:");
       console.log(nftList);
+
+      var pcWindow = document.getElementById("game").contentWindow;
+      pcWindow.postMessage(
+        {
+          type: "StartGame",
+          data: nftList[0],
+        },
+        "*"
+      );
+
+      return () => {};
     }
-  }, [nftList]);
+  }, [nftList, playcanvasReady]);
+
+  useEffect(() => {
+    if (playcanvasReady) {
+      console.log("Sending message to iFrame.");
+
+      var pcWindow = document.getElementById("game").contentWindow;
+      pcWindow.postMessage(
+        {
+          type: "StartGame",
+          data: "loaded",
+        },
+        "*"
+      );
+    }
+  }, [playcanvasReady]);
 
   return (
     <div className="App">
