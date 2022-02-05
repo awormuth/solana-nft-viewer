@@ -1,145 +1,20 @@
-import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
-import { clusterApiUrl, Connection, PublicKey } from "@solana/web3.js";
 import React, { useEffect, useState } from "react";
 import "./App.css";
-import { getMetadata } from "./token_metadata";
-
-// Set our network to devnet.
-const network = clusterApiUrl("mainnet-beta");
+import NFTManager from "./NFTManager";
+import WalletConnection from "./WalletConnection";
 
 const App = () => {
   // State
   const [walletAddress, setWalletAddress] = useState(null);
-  const [nftList, setNftList] = useState([]);
   const [playcanvasReady, setPlaycanvasReady] = useState(false);
-
-  /*
-   * This function holds the logic for deciding if a Phantom Wallet is
-   * connected or not
-   */
-  const checkIfWalletIsConnected = async () => {
-    try {
-      const { solana } = window;
-
-      if (solana) {
-        if (solana.isPhantom) {
-          console.log("Phantom wallet found!");
-
-          /*
-           * The solana object gives us a function that will allow us to connect
-           * directly with the user's wallet!
-           */
-          const response = await solana.connect({ onlyIfTrusted: true });
-          console.log(
-            "Connected with Public Key:",
-            response.publicKey.toString()
-          );
-
-          /*
-           * Set the user's publicKey in state to be used later!
-           */
-          setWalletAddress(response.publicKey.toString());
-        }
-      } else {
-        alert("Solana object not found! Get a Phantom Wallet 👻");
-      }
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
-  const connectWallet = async () => {
-    const { solana } = window;
-
-    if (solana) {
-      const response = await solana.connect();
-      console.log("Connected with Public Key:", response.publicKey.toString());
-      setWalletAddress(response.publicKey.toString());
-    }
-  };
-
-  const loadImageData = async (uri) => {
-    const response = await fetch(uri);
-    const { image } = await response.json();
-    return image;
-  };
-
-  async function getNFTs() {
-    const connection = new Connection(network, "processed");
-    const pubKey = new PublicKey(walletAddress);
-    var balance = await connection.getBalance(pubKey);
-    var tokenOwner = await connection.getParsedTokenAccountsByOwner(pubKey, {
-      programId: TOKEN_PROGRAM_ID,
-    });
-    console.log("Lamports: ", balance);
-
-    for (var i = 0; i < tokenOwner.value.length; i++) {
-      if (i > 0) {
-        break;
-      }
-
-      var val = tokenOwner.value[i];
-      var tokenPublicKey = val.account.data.parsed.info.mint;
-
-      try {
-        var metadata = await getMetadata(tokenPublicKey);
-        var imageURL = await loadImageData(metadata.data.data.uri);
-        console.log(imageURL);
-        console.log(metadata.data);
-        // eslint-disable-next-line no-loop-func
-        setNftList((nftList) => [
-          ...nftList,
-          {
-            img: imageURL,
-          },
-        ]);
-      } catch {
-        continue;
-      }
-    }
-  }
-
-  /*
-   * We want to render this UI when the user hasn't connected
-   * their wallet to our app yet.
-   */
-  const renderNotConnectedContainer = () => (
-    <button
-      className="cta-button connect-wallet-button"
-      onClick={connectWallet}
-    >
-      Connect Wallet
-    </button>
-  );
-
-  const renderConnectedContainer = () => {
-    if (nftList == null) {
-    } else {
-      return (
-        <div className="connected-container">
-          <div className="nft-grid">
-            {/* We use index as the key instead, also, the src is now item.gifLink */}
-            {nftList.map((item, index) => (
-              <div className="nft-item" key={index}>
-                <img src={item.img} />
-                {item.attributes}
-              </div>
-            ))}
-          </div>
-        </div>
-      );
-    }
-  };
+  const [nftData, setNftData] = useState([]);
 
   /*
    * When our component first mounts, let's check to see if we have a connected
    * Phantom Wallet
    */
   useEffect(() => {
-    const onLoad = async () => {
-      await checkIfWalletIsConnected();
-    };
-
+    // Listen for IFrameReady message from Playcanvas, which let's us know it can receive messages.
     window.addEventListener("message", function (event) {
       if (event.origin === "https://playcanv.as") {
         if (event.data.type === "IFrameReady") {
@@ -147,65 +22,44 @@ const App = () => {
         }
       }
     });
-
-    window.addEventListener("load", onLoad);
-    return () => window.removeEventListener("load", onLoad);
   }, []);
 
   useEffect(() => {
-    if (walletAddress) {
-      console.log("Fetching NFTs...");
-      getNFTs();
-    }
-  }, [walletAddress]);
+    if (nftData.length > 0 && playcanvasReady) {
+      console.log("Loaded NFT:");
+      console.log(nftData);
 
-  useEffect(() => {
-    if (nftList.length > 0 && playcanvasReady) {
-      console.log("Loaded NFTs:");
-      console.log(nftList);
-
-      var pcWindow = document.getElementById("game").contentWindow;
+      const pcWindow = document.getElementById("game").contentWindow;
       pcWindow.postMessage(
         {
           type: "StartGame",
-          data: nftList[0],
-        },
-        "*"
-      );
-
-      return () => {};
-    }
-  }, [nftList, playcanvasReady]);
-
-  useEffect(() => {
-    if (playcanvasReady) {
-      console.log("Sending message to iFrame.");
-
-      var pcWindow = document.getElementById("game").contentWindow;
-      pcWindow.postMessage(
-        {
-          type: "StartGame",
-          data: "loaded",
+          data: nftData[0],
         },
         "*"
       );
     }
-  }, [playcanvasReady]);
+  }, [nftData, playcanvasReady]);
 
   return (
     <div className="App">
-      {/* This was solely added for some styling fanciness */}
-      <div className={walletAddress ? "authed-container" : "container"}>
-        <div className="header-container">
-          {!walletAddress && renderNotConnectedContainer()}
-          <iframe
-            src="https://playcanv.as/e/p/zqG68neQ/"
-            id="game"
-            title="PlayCanvas"
-            frameBorder="0"
-          ></iframe>
-          {walletAddress && renderConnectedContainer()}
+      <div className={"container"}>
+        <div className="overlay-container">
+          <WalletConnection
+            walletAddress={walletAddress}
+            setWalletAddress={setWalletAddress}
+          />
+          <NFTManager
+            walletAddress={walletAddress}
+            nftData={nftData}
+            setNftData={setNftData}
+          />
         </div>
+        <iframe
+          src="https://playcanv.as/e/p/zqG68neQ/"
+          id="game"
+          title="PlayCanvas"
+          frameBorder="0"
+        ></iframe>
         <div className="footer-container"></div>
       </div>
     </div>
